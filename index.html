@@ -101,13 +101,9 @@
       color: #e8eef7;
     }
     .controls {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 1rem;
-      align-items: end;
-    }
-    @media (max-width: 560px) {
-      .controls { grid-template-columns: 1fr; }
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
     }
     .btn {
       background: var(--accent);
@@ -134,7 +130,6 @@
       display: flex;
       gap: 0.5rem;
       flex-wrap: wrap;
-      margin-top: 0.75rem;
     }
     .summary {
       display: grid;
@@ -273,7 +268,7 @@
           <label for="division">Select division</label>
           <select id="division"></select>
         </div>
-        <div class="btn-row" style="margin-top:0">
+        <div class="btn-row">
           <button type="button" class="btn secondary" id="clearBtn" title="Clear times for this division only">Clear this division</button>
           <button type="button" class="btn secondary" id="hardRefreshBtn" title="Clear app cache and reload so updates from GitHub load">Hard refresh</button>
         </div>
@@ -598,6 +593,10 @@
     });
 
     clearBtn.addEventListener("click", () => {
+      const ok = confirm(
+        "Clear all stage times for \"" + state.division + "\"?\n\nThis cannot be undone."
+      );
+      if (!ok) return;
       state.timesByDivision[state.division] = {};
       saveState();
       renderStages();
