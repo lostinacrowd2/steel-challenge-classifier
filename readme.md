@@ -16,6 +16,10 @@ Each division keeps its own times. Classification % and class update live. Works
 - Android: menu → Install app  
 - iOS Safari: Share → Add to Home Screen  
 
+## After you push updates
+
+In the installed app, tap **Hard refresh**. That clears the offline cache and reloads so you get the new code. Your stage times stay on the device.
+
 ## Files
 
 | File | Role |
@@ -25,6 +29,6 @@ Each division keeps its own times. Classification % and class update live. Works
 | `sw.js` | Offline cache |
 | `icon.svg` | Vector icon |
 | `icon-192.png` / `icon-512.png` | PWA icons |
-| `generate-icons.html` | One-time icon helper (optional after PNGs exist) |
+| `generate-icons.html` | One-time icon helper |
 
 Times stay in your browser only (`localStorage`), per division.
