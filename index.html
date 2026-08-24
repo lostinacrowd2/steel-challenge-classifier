@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Steel Challenge Classification Calculator</title>
-  <meta name="description" content="Live SCSA Steel Challenge classification calculator. Enter your best stage times and see your percentage, class, and path to the next level." />
+  <meta name="description" content="Live SCSA Steel Challenge classification calculator. Enter your best stage times per division and see your percentage, class, and path to the next level." />
   <style>
     :root {
       --bg: #0f1419;
@@ -231,7 +231,7 @@
   <div class="container">
     <header>
       <h1>Steel Challenge Classifier</h1>
-      <p>Enter your best stage totals · live % &amp; class · path to the next level</p>
+      <p>Enter final stage times (after drop) · each division saves its own data</p>
     </header>
 
     <div class="card">
@@ -242,7 +242,7 @@
           <select id="division"></select>
         </div>
         <div class="btn-row" style="margin-top:0">
-          <button type="button" class="btn secondary" id="clearBtn">Clear times</button>
+          <button type="button" class="btn secondary" id="clearBtn" title="Clear times for this division only">Clear this division</button>
         </div>
       </div>
     </div>
@@ -275,20 +275,19 @@
         <div id="pathText"></div>
       </div>
       <p class="hint">
-        Formula: <code>percentage = total peak time ÷ your total time × 100</code>.
-        Official SCSA classification uses your best eligible stage times (min 4 stages).
-        An earned class letter never drops even if % does.
+        Enter the <strong>final stage time</strong> they give you (best 4 of 5, or best 3 of 4 on Outer Limits).
+        Formula: <code>percentage = total peak ÷ your total × 100</code>.
+        Min 4 stages to classify. Each division keeps its own times when you switch.
       </p>
     </div>
 
     <div class="card">
-      <h2>Stage Times <small style="font-weight:400;color:var(--muted)">(best 4 of 5 · Outer Limits best 3 of 4)</small></h2>
+      <h2>Stage Times <small style="font-weight:400;color:var(--muted)">(final totals only)</small></h2>
       <div class="stages-grid" id="stages"></div>
     </div>
 
     <footer>
-      Peak times from SCSA (scsa.org/classification, mid-2026).
-      Unofficial estimate — official results come only from processed match scores.
+      Peak times from SCSA (scsa.org/classification). Unofficial estimate.
       <br />
       Built for GitHub Pages · tweak freely.
     </footer>
@@ -306,7 +305,6 @@
       { id: "sc108", name: "Roundabout",     short: "SC-108", strings: "4 of 5" },
     ];
 
-    // Order matches STAGES above
     const PEAKS = {
       "Open":                    [11.25, 9.5,  8.5,  12.5,  10.5,  11.25, 11.5,  8.5],
       "Limited":                 [12.5,  9.5,  9.5,  13.5,  10.5,  12.5,  12.5,  9.5],
@@ -356,8 +354,19 @@
       return null;
     }
 
-    const STORAGE_KEY = "sc-classifier-v1";
-    let state = { division: "Carry Optics", times: {} };
+    // timesByDivision: { "Carry Optics": { sc101: 12.5, ... }, "Open": { ... } }
+    const STORAGE_KEY = "sc-classifier-v2";
+    let state = {
+      division: "Carry Optics",
+      timesByDivision: {},
+    };
+
+    function currentTimes() {
+      if (!state.timesByDivision[state.division]) {
+        state.timesByDivision[state.division] = {};
+      }
+      return state.timesByDivision[state.division];
+    }
 
     function loadState() {
       try {
@@ -365,7 +374,21 @@
         if (raw) {
           const parsed = JSON.parse(raw);
           if (parsed.division && PEAKS[parsed.division]) state.division = parsed.division;
-          if (parsed.times && typeof parsed.times === "object") state.times = parsed.times;
+          if (parsed.timesByDivision && typeof parsed.timesByDivision === "object") {
+            state.timesByDivision = parsed.timesByDivision;
+          }
+        }
+        // migrate old v1 format if present (single shared times)
+        const old = localStorage.getItem("sc-classifier-v1");
+        if (old && Object.keys(state.timesByDivision).length === 0) {
+          try {
+            const oldParsed = JSON.parse(old);
+            if (oldParsed.times && typeof oldParsed.times === "object") {
+              const div = (oldParsed.division && PEAKS[oldParsed.division]) ? oldParsed.division : state.division;
+              state.timesByDivision[div] = oldParsed.times;
+              if (oldParsed.division && PEAKS[oldParsed.division]) state.division = oldParsed.division;
+            }
+          } catch (_) {}
         }
       } catch (_) {}
     }
@@ -392,9 +415,11 @@
 
     function renderStages() {
       const peaks = PEAKS[state.division];
+      const times = currentTimes();
       stagesEl.innerHTML = "";
+
       STAGES.forEach((stage, i) => {
-        const time = state.times[stage.id];
+        const time = times[stage.id];
         const peak = peaks[i];
         const row = document.createElement("div");
         row.className = "stage-row" + (time != null && time > 0 ? " has-time" : "");
@@ -411,7 +436,7 @@
         input.type = "number";
         input.min = "0";
         input.step = "0.01";
-        input.placeholder = "time";
+        input.placeholder = "final time";
         input.value = time != null && time > 0 ? time : "";
         input.dataset.stageId = stage.id;
         input.addEventListener("input", onTimeInput);
@@ -427,23 +452,25 @@
 
     function onTimeInput(e) {
       const id = e.target.dataset.stageId;
+      const times = currentTimes();
       const val = parseFloat(e.target.value);
       if (e.target.value === "" || isNaN(val) || val <= 0) {
-        delete state.times[id];
+        delete times[id];
       } else {
-        state.times[id] = Math.round(val * 100) / 100;
+        times[id] = Math.round(val * 100) / 100;
       }
       saveState();
       updateResults();
-      e.target.closest(".stage-row").classList.toggle("has-time", !!state.times[id]);
+      e.target.closest(".stage-row").classList.toggle("has-time", !!times[id]);
     }
 
     function updateResults() {
       const peaks = PEAKS[state.division];
+      const times = currentTimes();
       let yourSum = 0, peakSum = 0, count = 0;
 
       STAGES.forEach((stage, i) => {
-        const time = state.times[stage.id];
+        const time = times[stage.id];
         const peak = peaks[i];
         const pctEl = document.getElementById(`pct-${stage.id}`);
 
@@ -522,6 +549,7 @@
     }
 
     divisionSelect.addEventListener("change", () => {
+      // current division's times are already in timesByDivision; just switch
       state.division = divisionSelect.value;
       saveState();
       renderStages();
@@ -529,7 +557,7 @@
     });
 
     clearBtn.addEventListener("click", () => {
-      state.times = {};
+      state.timesByDivision[state.division] = {};
       saveState();
       renderStages();
       updateResults();
