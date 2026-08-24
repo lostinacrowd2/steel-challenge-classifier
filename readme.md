@@ -1,31 +1,30 @@
 # Steel Challenge Classifier (PWA)
 
-Enter your **final stage times** (after the match drops the slowest string).  
+Enter **final stage times** (after the match drops the slowest string).  
 Each division keeps its own times. Classification % and class update live. Works offline once installed.
 
-## Deploy to GitHub Pages
+## Setup
 
-1. Create a new repo and push these files to the root (or `/docs`).
-2. **Settings → Pages → Source:** Deploy from branch → `main` / root.
-3. Open `https://YOUR_USERNAME.github.io/REPO_NAME/`
+1. Generate icons: open `generate-icons.html` in a browser → download `icon-192.png` and `icon-512.png` into this folder.
+2. Push all files to a public GitHub repo (root or `/docs`).
+3. **Settings → Pages → Source:** Deploy from branch → `main` → root.
+4. Open: `https://YOUR_USERNAME.github.io/REPO_NAME/`
 
-Must be served over **HTTPS** (GitHub Pages does this) for the service worker and install prompt.
+## Install
 
-## Install as app
-
-- **Chrome / Edge (desktop):** address bar → install icon, or menu → “Install Steel Challenge Classifier”
-- **Android Chrome:** menu → “Install app” / “Add to Home screen”
-- **iOS Safari:** Share → “Add to Home Screen”
+- Chrome / Edge: install icon in the address bar  
+- Android: menu → Install app  
+- iOS Safari: Share → Add to Home Screen  
 
 ## Files
 
 | File | Role |
 |------|------|
-| `index.html` | App UI + logic |
+| `index.html` | App |
 | `manifest.webmanifest` | Install metadata |
 | `sw.js` | Offline cache |
-| `icon.svg` | App icon |
+| `icon.svg` | Vector icon |
+| `icon-192.png` / `icon-512.png` | PWA icons |
+| `generate-icons.html` | One-time icon helper (optional after PNGs exist) |
 
-Times are stored only in your browser (`localStorage`), per division. Nothing is sent to a server.
-
-Peak times are from SCSA (scsa.org). This is an unofficial helper.
+Times stay in your browser only (`localStorage`), per division.
