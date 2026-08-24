@@ -275,6 +275,7 @@
         </div>
         <div class="btn-row" style="margin-top:0">
           <button type="button" class="btn secondary" id="clearBtn" title="Clear times for this division only">Clear this division</button>
+          <button type="button" class="btn secondary" id="hardRefreshBtn" title="Clear app cache and reload so updates from GitHub load">Hard refresh</button>
         </div>
       </div>
     </div>
@@ -601,6 +602,28 @@
       saveState();
       renderStages();
       updateResults();
+    });
+
+    document.getElementById("hardRefreshBtn").addEventListener("click", async () => {
+      const ok = confirm(
+        "Hard refresh will clear the offline cache and reload.\n\nYour stage times stay saved on this device.\nUse this after you push updates on GitHub."
+      );
+      if (!ok) return;
+
+      try {
+        if ("serviceWorker" in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map((r) => r.unregister()));
+        }
+        if ("caches" in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((k) => caches.delete(k)));
+        }
+      } catch (_) {}
+
+      const url = new URL(window.location.href);
+      url.searchParams.set("_refresh", String(Date.now()));
+      window.location.replace(url.toString());
     });
 
     function updateOnlineStatus() {
