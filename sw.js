@@ -1,4 +1,4 @@
-const CACHE = "sc-classifier-v1";
+const CACHE = "sc-classifier-v3";
 const ASSETS = [
   "./",
   "./index.html",
