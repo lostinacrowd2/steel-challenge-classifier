@@ -1,155 +1,902 @@
-.class-badge {
-  display: inline-block;
-  padding: 0.2rem 0.65rem;
-  border-radius: 999px;
-  font-size: 0.95rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-}
-.class-GM { background: rgba(245, 158, 11, 0.2); color: var(--gm); }
-.class-M  { background: rgba(167, 139, 250, 0.2); color: var(--m); }
-.class-A  { background: rgba(52, 211, 153, 0.2); color: var(--a); }
-.class-B  { background: rgba(96, 165, 250, 0.2); color: var(--b); }
-.class-C  { background: rgba(251, 191, 36, 0.2); color: var(--c); }
-.class-D  { background: rgba(248, 113, 113, 0.2); color: var(--d); }
-.class-U  { background: rgba(139, 155, 180, 0.2); color: var(--muted); }
-.stages-grid { display: grid; gap: 0.65rem; }
-.stage-row {
-  display: grid;
-  grid-template-columns: minmax(110px, 1.4fr) 90px 1fr 90px;
-  gap: 0.5rem 0.75rem;
-  align-items: center;
-  padding: 0.65rem 0.75rem;
-  background: var(--surface2);
-  border-radius: 10px;
-  border: 1px solid transparent;
-}
-.stage-row.has-time { border-color: var(--border); }
-.stage-name { font-weight: 600; font-size: 0.9rem; }
-.stage-name small {
-  display: block;
-  font-weight: 400;
-  font-size: 0.75rem;
-  color: var(--muted);
-}
-.peak {
-  font-size: 0.85rem;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-.stage-pct {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-.stage-pct .cls {
-  display: block;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-@media (max-width: 640px) {
-  .stage-row {
-    grid-template-columns: 1fr 1fr;
-    grid-template-areas:
-      "name name"
-      "peak input"
-      "pct pct";
-  }
-  .stage-name { grid-area: name; }
-  .peak { grid-area: peak; }
-  .stage-row input { grid-area: input; }
-  .stage-pct { grid-area: pct; text-align: left; margin-top: 0.25rem; }
-}
-.path-box {
-  background: var(--surface2);
-  border-radius: 10px;
-  padding: 1rem 1.1rem;
-  margin-top: 0.75rem;
-}
-.path-box strong { color: var(--accent); }
-.hint {
-  font-size: 0.8rem;
-  color: var(--muted);
-  margin-top: 0.75rem;
-}
-footer {
-  text-align: center;
-  margin-top: 2rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--border);
-  color: var(--muted);
-  font-size: 0.8rem;
-}
-#offlineBanner {
-  display: none;
-  background: #1e3a5f;
-  color: #93c5fd;
-  text-align: center;
-  padding: 0.4rem 1rem;
-  font-size: 0.85rem;
-}
-#offlineBanner.show { display: block; }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Steel Challenge Classifier</title>
+  <meta name="description" content="Live SCSA Steel Challenge classification calculator. Enter final stage times per division, see class, %, and path to the next level. Works offline." />
+  <meta name="theme-color" content="#0f1419" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="SC Classifier" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="icon" href="icon-192.png" sizes="192x192" type="image/png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --surface2: #243044;
+      --border: #2d3a4f;
+      --text: #e8eef7;
+      --muted: #8b9bb4;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --gm: #f59e0b;
+      --m: #a78bfa;
+      --a: #34d399;
+      --b: #60a5fa;
+      --c: #fbbf24;
+      --d: #f87171;
+      --danger: #ef4444;
+      --radius: 12px;
+      --font: "Segoe UI", system-ui, -apple-system, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      min-height: 100dvh;
+      line-height: 1.5;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 1.25rem 1rem 3rem;
+    }
+    header { text-align: center; margin-bottom: 1.75rem; }
+    header h1 {
+      font-size: 1.65rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.35rem;
+    }
+    header p { color: var(--muted); font-size: 0.95rem; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .card h2 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+    select, input[type="number"] {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 0.6rem 0.75rem;
+      font-size: 1rem;
+      font-family: inherit;
+      -webkit-appearance: menulist;
+      appearance: auto;
+      cursor: pointer;
+    }
+    input[type="number"] {
+      -webkit-appearance: auto;
+      appearance: auto;
+      cursor: text;
+    }
+    select:focus, input[type="number"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    select option {
+      background: #1a2332;
+      color: #e8eef7;
+    }
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.65rem 1.1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn:hover { background: var(--accent-hover); }
+    .btn.secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .btn.secondary:hover {
+      border-color: var(--muted);
+      color: var(--text);
+    }
+    .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.75rem;
+    }
+    .stat {
+      background: var(--surface2);
+      border-radius: 10px;
+      padding: 1rem;
+      text-align: center;
+    }
+    .stat .label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-bottom: 0.25rem;
+    }
+    .stat .value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat .sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 0.15rem;
+    }
+    .class-badge {
+      display: inline-block;
+      padding: 0.2rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+    .class-GM { background: rgba(245, 158, 11, 0.2); color: var(--gm); }
+    .class-M  { background: rgba(167, 139, 250, 0.2); color: var(--m); }
+    .class-A  { background: rgba(52, 211, 153, 0.2); color: var(--a); }
+    .class-B  { background: rgba(96, 165, 250, 0.2); color: var(--b); }
+    .class-C  { background: rgba(251, 191, 36, 0.2); color: var(--c); }
+    .class-D  { background: rgba(248, 113, 113, 0.2); color: var(--d); }
+    .class-U  { background: rgba(139, 155, 180, 0.2); color: var(--muted); }
+    .stages-grid { display: grid; gap: 0.65rem; }
+    .stage-row {
+      display: grid;
+      grid-template-columns: minmax(110px, 1.4fr) 90px 1fr 90px;
+      gap: 0.5rem 0.75rem;
+      align-items: center;
+      padding: 0.65rem 0.75rem;
+      background: var(--surface2);
+      border-radius: 10px;
+      border: 1px solid transparent;
+    }
+    .stage-row.has-time { border-color: var(--border); }
+    .stage-name { font-weight: 600; font-size: 0.9rem; }
+    .stage-name small {
+      display: block;
+      font-weight: 400;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .peak {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .stage-pct {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .stage-pct .cls {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    @media (max-width: 640px) {
+      .stage-row {
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+          "name name"
+          "peak input"
+          "pct pct";
+      }
+      .stage-name { grid-area: name; }
+      .peak { grid-area: peak; }
+      .stage-row input { grid-area: input; }
+      .stage-pct { grid-area: pct; text-align: left; margin-top: 0.25rem; }
+    }
+    .path-box {
+      background: var(--surface2);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+      margin-top: 0.75rem;
+    }
+    .path-box strong { color: var(--accent); }
+    .hint {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 0.75rem;
+    }
+    footer {
+      text-align: center;
+      margin-top: 2rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+    #offlineBanner {
+      display: none;
+      background: #1e3a5f;
+      color: #93c5fd;
+      text-align: center;
+      padding: 0.4rem 1rem;
+      font-size: 0.85rem;
+    }
+    #offlineBanner.show { display: block; }
 
-/* Stage diagram picker */
-.stage-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-bottom: 1rem;
-}
-.stage-chip {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  color: var(--muted);
-  border-radius: 999px;
-  padding: 0.4rem 0.75rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-}
-.stage-chip.active {
-  background: rgba(59, 130, 246, 0.2);
-  border-color: var(--accent);
-  color: #93c5fd;
-}
-.diagram-wrap {
-  background: var(--surface2);
-  border-radius: 10px;
-  padding: 1rem;
-  overflow-x: auto;
-}
-.diagram-wrap svg {
-  display: block;
-  width: 100%;
-  max-width: 420px;
-  height: auto;
-  margin: 0 auto;
-}
-.diagram-meta {
-  margin-top: 0.85rem;
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-.diagram-meta strong { color: var(--text); }
-.diagram-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem 1.25rem;
-  margin-top: 0.75rem;
-  font-size: 0.75rem;
-  color: var(--muted);
-}
-.diagram-legend span::before {
-  content: "";
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  margin-right: 0.35rem;
-  vertical-align: middle;
-}
-.legend-plate::before { background: #94a3b8; }
-.legend-stop::before { background: #f59e0b; }
-.legend-box::before { background: transparent; border: 2px solid #3b82f6; border-radius: 2px; width: 12px; height: 12px; }
+    /* Stage diagram picker */
+    .stage-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+    .stage-chip {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 0.4rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .stage-chip.active {
+      background: rgba(59, 130, 246, 0.2);
+      border-color: var(--accent);
+      color: #93c5fd;
+    }
+    .diagram-wrap {
+      background: var(--surface2);
+      border-radius: 10px;
+      padding: 1rem;
+      overflow-x: auto;
+    }
+    .diagram-wrap svg {
+      display: block;
+      width: 100%;
+      max-width: 420px;
+      height: auto;
+      margin: 0 auto;
+    }
+    .diagram-meta {
+      margin-top: 0.85rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .diagram-meta strong { color: var(--text); }
+    .diagram-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.25rem;
+      margin-top: 0.75rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .diagram-legend span::before {
+      content: "";
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .legend-plate::before { background: #94a3b8; }
+    .legend-stop::before { background: #f59e0b; }
+    .legend-box::before { background: transparent; border: 2px solid #3b82f6; border-radius: 2px; width: 12px; height: 12px; }
+  </style>
+</head>
+<body>
+  <div id="offlineBanner">You're offline — using cached app. Your times are still saved on this device.</div>
+  <div class="container">
+    <header>
+      <h1>Steel Challenge Classifier</h1>
+      <p>Final stage times · per-division save · works offline</p>
+    </header>
+
+    <div class="card">
+      <h2>Division</h2>
+      <div class="controls">
+        <div>
+          <label for="division">Select division</label>
+          <select id="division"></select>
+        </div>
+        <div class="btn-row">
+          <button type="button" class="btn secondary" id="clearBtn" title="Clear times for this division only">Clear this division</button>
+          <button type="button" class="btn secondary" id="hardRefreshBtn" title="Clear app cache and reload so updates from GitHub load">Hard refresh</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Your Classification</h2>
+      <div class="summary" id="summary">
+        <div class="stat">
+          <div class="label">Class</div>
+          <div class="value"><span class="class-badge class-U" id="classBadge">—</span></div>
+          <div class="sub" id="stagesUsed">Need ≥ 4 stages</div>
+        </div>
+        <div class="stat">
+          <div class="label">Percentage</div>
+          <div class="value" id="pctValue">—</div>
+          <div class="sub" id="pctDetail"></div>
+        </div>
+        <div class="stat">
+          <div class="label">Your total</div>
+          <div class="value" id="yourTotal">—</div>
+          <div class="sub">seconds</div>
+        </div>
+        <div class="stat">
+          <div class="label">Peak total</div>
+          <div class="value" id="peakTotal">—</div>
+          <div class="sub">seconds</div>
+        </div>
+      </div>
+      <div class="path-box" id="pathBox" style="display:none">
+        <div id="pathText"></div>
+      </div>
+      <p class="hint">
+        Enter the <strong>final stage time</strong> (best 4 of 5, or best 3 of 4 on Outer Limits).
+        Formula: <code>percentage = total peak ÷ your total × 100</code>.
+        Min 4 stages to classify. Each division keeps its own times.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Stage Times <small style="font-weight:400;color:var(--muted)">(final totals only)</small></h2>
+      <div class="stages-grid" id="stages"></div>
+    </div>
+
+    <div class="card">
+      <h2>Stage diagrams</h2>
+      <p class="hint" style="margin-top:0;margin-bottom:0.85rem">
+        Tap a stage. Schematics are simplified top-down views (not official rulebook drawings). Stop plate is always last.
+      </p>
+      <div class="stage-chips" id="stageChips"></div>
+      <div class="diagram-wrap">
+        <div id="diagramSvg"></div>
+        <div class="diagram-meta" id="diagramMeta"></div>
+        <div class="diagram-legend">
+          <span class="legend-plate">Plate (T)</span>
+          <span class="legend-stop">Stop plate (SP)</span>
+          <span class="legend-box">Shooting box</span>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      Peak times from SCSA. Unofficial estimate. Install from browser for offline use.
+    </footer>
+  </div>
+
+  <script>
+    const STAGES = [
+      { id: "sc101", name: "5 to Go",        short: "SC-101", strings: "4 of 5" },
+      { id: "sc102", name: "Showdown",       short: "SC-102", strings: "4 of 5" },
+      { id: "sc103", name: "Smoke & Hope",   short: "SC-103", strings: "4 of 5" },
+      { id: "sc104", name: "Outer Limits",   short: "SC-104", strings: "3 of 4" },
+      { id: "sc105", name: "Accelerator",    short: "SC-105", strings: "4 of 5" },
+      { id: "sc106", name: "The Pendulum",   short: "SC-106", strings: "4 of 5" },
+      { id: "sc107", name: "Speed Option",   short: "SC-107", strings: "4 of 5" },
+      { id: "sc108", name: "Roundabout",     short: "SC-108", strings: "4 of 5" },
+    ];
+
+    const PEAKS = {
+      "Open":                    [11.25, 9.5,  8.5,  12.5,  10.5,  11.25, 11.5,  8.5],
+      "Limited":                 [12.5,  9.5,  9.5,  13.5,  10.5,  12.5,  12.5,  9.5],
+      "Limited Optics":          [12.25, 9.5,  9.5,  13.5,  10.75, 12.25, 12.25, 9.5],
+      "Production":              [13.0,  10.0, 10.0, 14.0,  11.5,  13.0,  13.0,  10.0],
+      "Single Stack":            [13.25, 10.5, 10.25,14.75, 11.75, 13.5,  13.5,  10.5],
+      "Carry Optics":            [12.5,  9.75, 10.0, 13.75, 11.0,  12.75, 13.0,  9.75],
+      "Iron Sight Revolver":     [13.5,  12.0, 10.5, 15.75, 13.0,  14.25, 14.0,  11.0],
+      "Optical Sight Revolver":  [12.25, 10.5, 10.0, 14.25, 12.75, 13.5,  12.75, 10.5],
+      "PCC Optics":              [9.5,   7.0,  7.0,  11.25, 8.75,  9.0,   9.5,   7.5],
+      "PCC Iron":                [10.75, 8.5,  7.75, 12.25, 9.5,   10.5,  11.0,  8.0],
+      "Rimfire Pistol Optics":   [8.75,  7.5,  7.0,  11.5,  8.5,   9.5,   10.0,  7.5],
+      "Rimfire Pistol Iron":     [10.5,  9.0,  8.0,  13.0,  9.25,  11.0,  11.0,  8.25],
+      "Rimfire Rifle Optics":    [9.5,   7.0,  7.0,  10.75, 8.5,   9.0,   9.0,   7.0],
+      "Rimfire Rifle Iron":      [9.75,  7.5,  7.5,  12.0,  9.0,   9.75,  10.0,  7.5],
+      "Rimfire Revolver Optic":  [9.75,  8.25, 7.75, 12.75, 9.5,   10.5,  11.0,  8.25],
+      "Rimfire Revolver Iron":   [11.5,  10.0, 9.0,  14.25, 10.25, 12.0,  12.0,  9.0],
+    };
+
+    const CLASS_THRESHOLDS = [
+      { name: "GM", min: 95,  label: "Grand Master" },
+      { name: "M",  min: 85,  label: "Master" },
+      { name: "A",  min: 75,  label: "A" },
+      { name: "B",  min: 60,  label: "B" },
+      { name: "C",  min: 40,  label: "C" },
+      { name: "D",  min: 0,   label: "D" },
+    ];
+
+    // Simplified schematic diagrams (top-down). Not official drawings.
+    const DIAGRAMS = {
+      sc101: {
+        note: "1 box · 4×10\" plates at increasing depth · SP ~7 yd · max ~18 yd",
+        svg: `
+<svg viewBox="0 0 280 320" xmlns="http://www.w3.org/2000/svg">
+  <text x="140" y="18" text-anchor="middle" fill="#8b9bb4" font-size="11">TARGETS (uprange)</text>
+  <circle cx="70" cy="50" r="14" fill="#94a3b8"/><text x="70" y="54" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T1</text>
+  <circle cx="110" cy="80" r="14" fill="#94a3b8"/><text x="110" y="84" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T2</text>
+  <circle cx="150" cy="110" r="14" fill="#94a3b8"/><text x="150" y="114" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T3</text>
+  <circle cx="190" cy="145" r="14" fill="#94a3b8"/><text x="190" y="149" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T4</text>
+  <circle cx="230" cy="100" r="16" fill="#f59e0b"/><text x="230" y="104" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">SP</text>
+  <line x1="40" y1="200" x2="240" y2="200" stroke="#2d3a4f" stroke-dasharray="4 4"/>
+  <text x="140" y="218" text-anchor="middle" fill="#8b9bb4" font-size="10">firing line</text>
+  <rect x="118" y="240" width="44" height="44" rx="4" fill="none" stroke="#3b82f6" stroke-width="3"/>
+  <text x="140" y="266" text-anchor="middle" fill="#93c5fd" font-size="10">BOX</text>
+  <text x="140" y="305" text-anchor="middle" fill="#8b9bb4" font-size="10">Typical order: T1→T2→T3→T4→SP</text>
+</svg>`
+      },
+      sc102: {
+        note: "2 boxes (6 ft apart) · 3 strings one side, 2 the other · no movement mid-string · max ~25 yd",
+        svg: `
+<svg viewBox="0 0 280 300" xmlns="http://www.w3.org/2000/svg">
+  <text x="140" y="18" text-anchor="middle" fill="#8b9bb4" font-size="11">TARGETS</text>
+  <rect x="40" y="40" width="28" height="36" rx="3" fill="#94a3b8"/><text x="54" y="62" text-anchor="middle" fill="#0f1419" font-size="9" font-weight="700">T1</text>
+  <circle cx="100" cy="55" r="14" fill="#94a3b8"/><text x="100" y="59" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T2</text>
+  <circle cx="180" cy="55" r="14" fill="#94a3b8"/><text x="180" y="59" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T3</text>
+  <rect x="212" y="40" width="28" height="36" rx="3" fill="#94a3b8"/><text x="226" y="62" text-anchor="middle" fill="#0f1419" font-size="9" font-weight="700">T4</text>
+  <circle cx="140" cy="95" r="16" fill="#f59e0b"/><text x="140" y="99" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">SP</text>
+  <line x1="30" y1="150" x2="250" y2="150" stroke="#2d3a4f" stroke-dasharray="4 4"/>
+  <rect x="50" y="200" width="44" height="44" rx="4" fill="none" stroke="#3b82f6" stroke-width="3"/>
+  <text x="72" y="226" text-anchor="middle" fill="#93c5fd" font-size="10">L</text>
+  <rect x="186" y="200" width="44" height="44" rx="4" fill="none" stroke="#3b82f6" stroke-width="3"/>
+  <text x="208" y="226" text-anchor="middle" fill="#93c5fd" font-size="10">R</text>
+  <text x="140" y="275" text-anchor="middle" fill="#8b9bb4" font-size="10">L: T1 T2 T4 T3 SP · R: T4 T3 T1 T2 SP</text>
+</svg>`
+      },
+      sc103: {
+        note: "1 box · large close targets · max ~14 yd · very fast",
+        svg: `
+<svg viewBox="0 0 280 280" xmlns="http://www.w3.org/2000/svg">
+  <text x="140" y="18" text-anchor="middle" fill="#8b9bb4" font-size="11">TARGETS</text>
+  <rect x="35" y="45" width="36" height="48" rx="3" fill="#94a3b8"/><text x="53" y="73" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T1</text>
+  <circle cx="110" cy="65" r="18" fill="#94a3b8"/><text x="110" y="70" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T2</text>
+  <circle cx="170" cy="65" r="18" fill="#94a3b8"/><text x="170" y="70" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T3</text>
+  <rect x="209" y="45" width="36" height="48" rx="3" fill="#94a3b8"/><text x="227" y="73" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T4</text>
+  <circle cx="140" cy="120" r="16" fill="#f59e0b"/><text x="140" y="124" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">SP</text>
+  <line x1="40" y1="165" x2="240" y2="165" stroke="#2d3a4f" stroke-dasharray="4 4"/>
+  <rect x="118" y="195" width="44" height="44" rx="4" fill="none" stroke="#3b82f6" stroke-width="3"/>
+  <text x="140" y="221" text-anchor="middle" fill="#93c5fd" font-size="10">BOX</text>
+  <text x="140" y="260" text-anchor="middle" fill="#8b9bb4" font-size="10">Common: outside-in → SP</text>
+</svg>`
+      },
+      sc104: {
+        note: "3 boxes · movement under time · 4 strings, best 3 · max ~35 yd",
+        svg: `
+<svg viewBox="0 0 280 300" xmlns="http://www.w3.org/2000/svg">
+  <text x="140" y="18" text-anchor="middle" fill="#8b9bb4" font-size="11">TARGETS</text>
+  <circle cx="55" cy="55" r="14" fill="#94a3b8"/><text x="55" y="59" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T1</text>
+  <rect x="90" y="40" width="28" height="36" rx="3" fill="#94a3b8"/><text x="104" y="62" text-anchor="middle" fill="#0f1419" font-size="9" font-weight="700">T2</text>
+  <rect x="162" y="40" width="28" height="36" rx="3" fill="#94a3b8"/><text x="176" y="62" text-anchor="middle" fill="#0f1419" font-size="9" font-weight="700">T3</text>
+  <circle cx="225" cy="55" r="14" fill="#94a3b8"/><text x="225" y="59" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T4</text>
+  <circle cx="140" cy="100" r="16" fill="#f59e0b"/><text x="140" y="104" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">SP</text>
+  <line x1="30" y1="145" x2="250" y2="145" stroke="#2d3a4f" stroke-dasharray="4 4"/>
+  <rect x="30" y="200" width="40" height="40" rx="4" fill="none" stroke="#3b82f6" stroke-width="3"/>
+  <text x="50" y="224" text-anchor="middle" fill="#93c5fd" font-size="9">1</text>
+  <rect x="120" y="200" width="40" height="40" rx="4" fill="none" stroke="#3b82f6" stroke-width="3"/>
+  <text x="140" y="224" text-anchor="middle" fill="#93c5fd" font-size="9">2</text>
+  <rect x="210" y="200" width="40" height="40" rx="4" fill="none" stroke="#3b82f6" stroke-width="3"/>
+  <text x="230" y="224" text-anchor="middle" fill="#93c5fd" font-size="9">3</text>
+  <path d="M50 245 L50 260 L140 260 L140 245" fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#a)"/>
+  <text x="140" y="285" text-anchor="middle" fill="#8b9bb4" font-size="9">Start weak side → move to center → SP</text>
+</svg>`
+      },
+      sc105: {
+        note: "1 box · near/far mix · max ~20 yd",
+        svg: `
+<svg viewBox="0 0 280 280" xmlns="http://www.w3.org/2000/svg">
+  <text x="140" y="18" text-anchor="middle" fill="#8b9bb4" font-size="11">TARGETS</text>
+  <circle cx="70" cy="50" r="14" fill="#94a3b8"/><text x="70" y="54" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T1</text>
+  <circle cx="210" cy="50" r="14" fill="#94a3b8"/><text x="210" y="54" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T2</text>
+  <circle cx="70" cy="110" r="14" fill="#94a3b8"/><text x="70" y="114" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T4</text>
+  <circle cx="210" cy="110" r="14" fill="#94a3b8"/><text x="210" y="114" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T3</text>
+  <circle cx="140" cy="80" r="16" fill="#f59e0b"/><text x="140" y="84" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">SP</text>
+  <line x1="40" y1="160" x2="240" y2="160" stroke="#2d3a4f" stroke-dasharray="4 4"/>
+  <rect x="118" y="195" width="44" height="44" rx="4" fill="none" stroke="#3b82f6" stroke-width="3"/>
+  <text x="140" y="221" text-anchor="middle" fill="#93c5fd" font-size="10">BOX</text>
+  <text x="140" y="260" text-anchor="middle" fill="#8b9bb4" font-size="10">Common: T1 T2 T4 T3 SP</text>
+</svg>`
+      },
+      sc106: {
+        note: "1 box · swinging array · max ~18 yd",
+        svg: `
+<svg viewBox="0 0 280 280" xmlns="http://www.w3.org/2000/svg">
+  <text x="140" y="18" text-anchor="middle" fill="#8b9bb4" font-size="11">TARGETS</text>
+  <circle cx="50" cy="70" r="14" fill="#94a3b8"/><text x="50" y="74" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T1</text>
+  <circle cx="100" cy="45" r="14" fill="#94a3b8"/><text x="100" y="49" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T2</text>
+  <circle cx="180" cy="45" r="14" fill="#94a3b8"/><text x="180" y="49" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T3</text>
+  <circle cx="230" cy="70" r="14" fill="#94a3b8"/><text x="230" y="74" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T4</text>
+  <circle cx="140" cy="100" r="16" fill="#f59e0b"/><text x="140" y="104" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">SP</text>
+  <line x1="40" y1="155" x2="240" y2="155" stroke="#2d3a4f" stroke-dasharray="4 4"/>
+  <rect x="118" y="190" width="44" height="44" rx="4" fill="none" stroke="#3b82f6" stroke-width="3"/>
+  <text x="140" y="216" text-anchor="middle" fill="#93c5fd" font-size="10">BOX</text>
+  <text x="140" y="255" text-anchor="middle" fill="#8b9bb4" font-size="10">L→R or R→L then SP</text>
+</svg>`
+      },
+      sc107: {
+        note: "1 box · long transitions · farthest SP of the set · max ~35 yd",
+        svg: `
+<svg viewBox="0 0 280 300" xmlns="http://www.w3.org/2000/svg">
+  <text x="140" y="18" text-anchor="middle" fill="#8b9bb4" font-size="11">TARGETS</text>
+  <circle cx="50" cy="50" r="14" fill="#94a3b8"/><text x="50" y="54" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T4</text>
+  <circle cx="100" cy="70" r="14" fill="#94a3b8"/><text x="100" y="74" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T3</text>
+  <circle cx="150" cy="90" r="14" fill="#94a3b8"/><text x="150" y="94" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T2</text>
+  <circle cx="200" cy="70" r="14" fill="#94a3b8"/><text x="200" y="74" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T1</text>
+  <circle cx="140" cy="140" r="16" fill="#f59e0b"/><text x="140" y="144" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">SP</text>
+  <line x1="40" y1="185" x2="240" y2="185" stroke="#2d3a4f" stroke-dasharray="4 4"/>
+  <rect x="118" y="220" width="44" height="44" rx="4" fill="none" stroke="#3b82f6" stroke-width="3"/>
+  <text x="140" y="246" text-anchor="middle" fill="#93c5fd" font-size="10">BOX</text>
+  <text x="140" y="285" text-anchor="middle" fill="#8b9bb4" font-size="10">Common: T4 T3 T2 T1 SP</text>
+</svg>`
+      },
+      sc108: {
+        note: "1 box · plates around center SP · max ~17 yd",
+        svg: `
+<svg viewBox="0 0 280 280" xmlns="http://www.w3.org/2000/svg">
+  <text x="140" y="18" text-anchor="middle" fill="#8b9bb4" font-size="11">TARGETS</text>
+  <circle cx="140" cy="85" r="16" fill="#f59e0b"/><text x="140" y="89" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">SP</text>
+  <circle cx="70" cy="50" r="14" fill="#94a3b8"/><text x="70" y="54" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T1</text>
+  <circle cx="210" cy="50" r="14" fill="#94a3b8"/><text x="210" y="54" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T2</text>
+  <circle cx="70" cy="120" r="14" fill="#94a3b8"/><text x="70" y="124" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T4</text>
+  <circle cx="210" cy="120" r="14" fill="#94a3b8"/><text x="210" y="124" text-anchor="middle" fill="#0f1419" font-size="10" font-weight="700">T3</text>
+  <line x1="40" y1="165" x2="240" y2="165" stroke="#2d3a4f" stroke-dasharray="4 4"/>
+  <rect x="118" y="195" width="44" height="44" rx="4" fill="none" stroke="#3b82f6" stroke-width="3"/>
+  <text x="140" y="221" text-anchor="middle" fill="#93c5fd" font-size="10">BOX</text>
+  <text x="140" y="260" text-anchor="middle" fill="#8b9bb4" font-size="10">Circle the array → SP last</text>
+</svg>`
+      },
+    };
+
+    function isDnf(stageIndex, time) {
+      if (time == null || isNaN(time) || time <= 0) return false;
+      return stageIndex === 3 ? time >= 90 : time >= 120;
+    }
+
+    function classFromPct(pct) {
+      if (pct == null || isNaN(pct)) return null;
+      for (const t of CLASS_THRESHOLDS) {
+        if (pct >= t.min) return t;
+      }
+      return CLASS_THRESHOLDS[CLASS_THRESHOLDS.length - 1];
+    }
+
+    function nextClass(pct) {
+      if (pct == null || isNaN(pct) || pct >= 95) return null;
+      for (let i = CLASS_THRESHOLDS.length - 2; i >= 0; i--) {
+        if (pct < CLASS_THRESHOLDS[i].min) return CLASS_THRESHOLDS[i];
+      }
+      return null;
+    }
+
+    const STORAGE_KEY = "sc-classifier-v2";
+    let state = {
+      division: "Carry Optics",
+      timesByDivision: {},
+    };
+    let selectedDiagram = "sc101";
+
+    function currentTimes() {
+      if (!state.timesByDivision[state.division]) {
+        state.timesByDivision[state.division] = {};
+      }
+      return state.timesByDivision[state.division];
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed.division && PEAKS[parsed.division]) state.division = parsed.division;
+          if (parsed.timesByDivision && typeof parsed.timesByDivision === "object") {
+            state.timesByDivision = parsed.timesByDivision;
+          }
+        }
+        const old = localStorage.getItem("sc-classifier-v1");
+        if (old && Object.keys(state.timesByDivision).length === 0) {
+          try {
+            const oldParsed = JSON.parse(old);
+            if (oldParsed.times && typeof oldParsed.times === "object") {
+              const div = (oldParsed.division && PEAKS[oldParsed.division]) ? oldParsed.division : state.division;
+              state.timesByDivision[div] = oldParsed.times;
+              if (oldParsed.division && PEAKS[oldParsed.division]) state.division = oldParsed.division;
+            }
+          } catch (_) {}
+        }
+      } catch (_) {}
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (_) {}
+    }
+
+    const divisionSelect = document.getElementById("division");
+    const stagesEl = document.getElementById("stages");
+    const clearBtn = document.getElementById("clearBtn");
+    const stageChips = document.getElementById("stageChips");
+    const diagramSvg = document.getElementById("diagramSvg");
+    const diagramMeta = document.getElementById("diagramMeta");
+
+    function initDivisionSelect() {
+      divisionSelect.innerHTML = "";
+      const names = Object.keys(PEAKS);
+      if (names.length === 0) {
+        const opt = document.createElement("option");
+        opt.textContent = "No divisions loaded";
+        divisionSelect.appendChild(opt);
+        return;
+      }
+      for (const name of names) {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        if (name === state.division) opt.selected = true;
+        divisionSelect.appendChild(opt);
+      }
+      if (!PEAKS[state.division]) {
+        state.division = names[0];
+        divisionSelect.value = state.division;
+      }
+    }
+
+    function initStageChips() {
+      stageChips.innerHTML = "";
+      STAGES.forEach((stage) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "stage-chip" + (stage.id === selectedDiagram ? " active" : "");
+        btn.textContent = stage.short.replace("SC-", "") + " " + stage.name;
+        btn.addEventListener("click", () => {
+          selectedDiagram = stage.id;
+          initStageChips();
+          renderDiagram();
+        });
+        stageChips.appendChild(btn);
+      });
+    }
+
+    function renderDiagram() {
+      const stage = STAGES.find((s) => s.id === selectedDiagram);
+      const d = DIAGRAMS[selectedDiagram];
+      if (!stage || !d) {
+        diagramSvg.innerHTML = "";
+        diagramMeta.textContent = "";
+        return;
+      }
+      diagramSvg.innerHTML = d.svg;
+      diagramMeta.innerHTML =
+        `<strong>${stage.name}</strong> (${stage.short}) · ${stage.strings}<br>${d.note}`;
+    }
+
+    function renderStages() {
+      const peaks = PEAKS[state.division];
+      const times = currentTimes();
+      stagesEl.innerHTML = "";
+
+      STAGES.forEach((stage, i) => {
+        const time = times[stage.id];
+        const peak = peaks[i];
+        const row = document.createElement("div");
+        row.className = "stage-row" + (time != null && time > 0 ? " has-time" : "");
+
+        const nameDiv = document.createElement("div");
+        nameDiv.className = "stage-name";
+        nameDiv.innerHTML = `${stage.name}<small>${stage.short} · ${stage.strings}</small>`;
+
+        const peakDiv = document.createElement("div");
+        peakDiv.className = "peak";
+        peakDiv.textContent = `Peak ${peak.toFixed(2)}s`;
+
+        const input = document.createElement("input");
+        input.type = "number";
+        input.min = "0";
+        input.step = "0.01";
+        input.placeholder = "final time";
+        input.inputMode = "decimal";
+        input.value = time != null && time > 0 ? time : "";
+        input.dataset.stageId = stage.id;
+        input.addEventListener("input", onTimeInput);
+
+        const pctDiv = document.createElement("div");
+        pctDiv.className = "stage-pct";
+        pctDiv.id = `pct-${stage.id}`;
+
+        row.append(nameDiv, peakDiv, input, pctDiv);
+        stagesEl.appendChild(row);
+      });
+    }
+
+    function onTimeInput(e) {
+      const id = e.target.dataset.stageId;
+      const times = currentTimes();
+      const val = parseFloat(e.target.value);
+      if (e.target.value === "" || isNaN(val) || val <= 0) {
+        delete times[id];
+      } else {
+        times[id] = Math.round(val * 100) / 100;
+      }
+      saveState();
+      updateResults();
+      e.target.closest(".stage-row").classList.toggle("has-time", !!times[id]);
+    }
+
+    function updateResults() {
+      const peaks = PEAKS[state.division];
+      const times = currentTimes();
+      let yourSum = 0, peakSum = 0, count = 0;
+
+      STAGES.forEach((stage, i) => {
+        const time = times[stage.id];
+        const peak = peaks[i];
+        const pctEl = document.getElementById(`pct-${stage.id}`);
+
+        if (time != null && time > 0 && !isDnf(i, time)) {
+          const pct = (peak / time) * 100;
+          const cls = classFromPct(pct);
+          yourSum += time;
+          peakSum += peak;
+          count++;
+          pctEl.innerHTML = `${pct.toFixed(1)}%<span class="cls class-${cls.name}">${cls.name}</span>`;
+        } else if (time != null && isDnf(i, time)) {
+          pctEl.innerHTML = `<span style="color:var(--danger)">DNF</span>`;
+        } else {
+          pctEl.innerHTML = "";
+        }
+      });
+
+      const badge = document.getElementById("classBadge");
+      const stagesUsed = document.getElementById("stagesUsed");
+      const pctValue = document.getElementById("pctValue");
+      const pctDetail = document.getElementById("pctDetail");
+      const yourTotal = document.getElementById("yourTotal");
+      const peakTotal = document.getElementById("peakTotal");
+      const pathBox = document.getElementById("pathBox");
+      const pathText = document.getElementById("pathText");
+
+      if (count === 0) {
+        badge.className = "class-badge class-U";
+        badge.textContent = "—";
+        stagesUsed.textContent = "Need ≥ 4 stages";
+        pctValue.textContent = "—";
+        pctDetail.textContent = "";
+        yourTotal.textContent = "—";
+        peakTotal.textContent = "—";
+        pathBox.style.display = "none";
+        return;
+      }
+
+      const overallPct = (peakSum / yourSum) * 100;
+      const cls = classFromPct(overallPct);
+
+      yourTotal.textContent = yourSum.toFixed(2);
+      peakTotal.textContent = peakSum.toFixed(2);
+
+      if (count < 4) {
+        badge.className = "class-badge class-U";
+        badge.textContent = "U";
+        stagesUsed.textContent = `${count} of 4 stages`;
+        pctValue.textContent = overallPct.toFixed(2) + "%";
+        pctDetail.textContent = "unofficial (need 4)";
+        pathBox.style.display = "none";
+      } else {
+        badge.className = `class-badge class-${cls.name}`;
+        badge.textContent = cls.name;
+        stagesUsed.textContent = `${count} stage${count > 1 ? "s" : ""}`;
+        pctValue.textContent = overallPct.toFixed(2) + "%";
+        pctDetail.textContent = cls.label;
+
+        const next = nextClass(overallPct);
+        if (next) {
+          const targetTotal = peakSum / (next.min / 100);
+          const needToCut = yourSum - targetTotal;
+          pathBox.style.display = "block";
+          if (needToCut <= 0) {
+            pathText.innerHTML = `You're already at or past the <strong>${next.name}</strong> threshold on the numbers you entered.`;
+          } else {
+            pathText.innerHTML =
+              `To reach <strong>${next.name}</strong> (${next.min}%): cut <strong>${needToCut.toFixed(2)}s</strong> ` +
+              `from your current total (target total ≤ ${targetTotal.toFixed(2)}s).`;
+          }
+        } else {
+          pathBox.style.display = "block";
+          pathText.innerHTML = `You're at <strong>Grand Master</strong> level on the stages entered. Nice.`;
+        }
+      }
+    }
+
+    divisionSelect.addEventListener("change", () => {
+      state.division = divisionSelect.value;
+      saveState();
+      renderStages();
+      updateResults();
+    });
+
+    clearBtn.addEventListener("click", () => {
+      const ok = confirm(
+        "Clear all stage times for \"" + state.division + "\"?\n\nThis cannot be undone."
+      );
+      if (!ok) return;
+      state.timesByDivision[state.division] = {};
+      saveState();
+      renderStages();
+      updateResults();
+    });
+
+    document.getElementById("hardRefreshBtn").addEventListener("click", async () => {
+      const ok = confirm(
+        "Hard refresh will clear the offline cache and reload.\n\nYour stage times stay saved on this device.\nUse this after you push updates on GitHub."
+      );
+      if (!ok) return;
+
+      try {
+        if ("serviceWorker" in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map((r) => r.unregister()));
+        }
+        if ("caches" in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((k) => caches.delete(k)));
+        }
+      } catch (_) {}
+
+      const url = new URL(window.location.href);
+      url.searchParams.set("_refresh", String(Date.now()));
+      window.location.replace(url.toString());
+    });
+
+    function updateOnlineStatus() {
+      document.getElementById("offlineBanner").classList.toggle("show", !navigator.onLine);
+    }
+    window.addEventListener("online", updateOnlineStatus);
+    window.addEventListener("offline", updateOnlineStatus);
+    updateOnlineStatus();
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch(() => {});
+      });
+    }
+
+    loadState();
+    initDivisionSelect();
+    initStageChips();
+    renderDiagram();
+    renderStages();
+    updateResults();
+  </script>
+</body>
+</html>
